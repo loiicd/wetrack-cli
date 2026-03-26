@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { stackSchema } from "dashboard_as_code";
+import { stackSchema } from "wetrack-dashboard";
 
 export interface ValidateOptions {
   verbose: boolean;
@@ -8,7 +8,7 @@ export interface ValidateOptions {
 
 export function validateCommand(
   filePath: string,
-  options: ValidateOptions
+  options: ValidateOptions = { verbose: false },
 ): void {
   const absolutePath = resolve(process.cwd(), filePath);
 

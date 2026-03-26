@@ -1,6 +1,6 @@
 import { resolve } from "path";
 import { writeFileSync } from "fs";
-import type { Stack } from "dashboard_as_code";
+import type { Stack } from "wetrack-dashboard";
 
 export interface SynthOptions {
   output?: string;

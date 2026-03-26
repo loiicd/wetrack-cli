@@ -2,29 +2,24 @@
 import { Command } from "commander";
 import { synthCommand } from "./commands/synth";
 import { deployCommand } from "./commands/deploy";
+import { validateCommand } from "./commands/validate";
 
 const program = new Command();
 
 program
   .name("wetrack")
   .description("WeTrack Dashboard-as-Code CLI")
-  .version("0.1.0");
+  .version("1.0.0");
 
 // ---- wetrack synth <file.ts> ----
 program
   .command("synth <file>")
   .description("TypeScript-Stack synthetisieren und JSON ausgeben")
   .option("-o, --output <path>", "JSON in Datei schreiben statt stdout")
-  .option(
-    "-v, --verbose",
-    "Zusammenfassung auch bei stdout-Ausgabe anzeigen",
-    false,
-  )
-  .action(
-    async (file: string, options: { output?: string; verbose: boolean }) => {
-      await synthCommand(file, options);
-    },
-  );
+  .option("-v, --verbose", "Zusammenfassung auch bei stdout-Ausgabe anzeigen", false)
+  .action(async (file: string, options: { output?: string; verbose: boolean }) => {
+    await synthCommand(file, options);
+  });
 
 // ---- wetrack deploy <file.ts> ----
 program
@@ -33,11 +28,11 @@ program
   .option(
     "-u, --url <url>",
     "API-URL des WeTrack Dashboards",
-    "http://localhost:3000/api/dashboard",
+    process.env.WETRACK_URL ?? "https://app.wetrack.dev/api/dashboard",
   )
   .option(
     "-k, --api-key <key>",
-    "Clerk API Key für Authentifizierung (alternativ: WETRACK_API_KEY env var)",
+    "Clerk API Key (alternativ: WETRACK_API_KEY env var)",
   )
   .option("--dry-run", "Synthetisiert, aber kein Deployment durchführen", false)
   .option("-v, --verbose", "Ausführliche Ausgabe", false)
@@ -52,5 +47,13 @@ program
       });
     },
   );
+
+// ---- wetrack validate <file.json> ----
+program
+  .command("validate <file>")
+  .description("JSON-Datei gegen das WeTrack-Schema validieren")
+  .action((file: string) => {
+    validateCommand(file);
+  });
 
 program.parse(process.argv);

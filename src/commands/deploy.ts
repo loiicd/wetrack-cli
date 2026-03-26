@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import type { Stack } from "dashboard_as_code";
+import type { Stack } from "wetrack-dashboard";
 
 export interface DeployOptions {
   url: string;
