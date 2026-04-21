@@ -4,6 +4,7 @@ import { synthCommand } from "./commands/synth";
 import { deployCommand } from "./commands/deploy";
 import { validateCommand } from "./commands/validate";
 import { initCommand } from "./commands/init";
+import { diffCommand } from "./commands/diff";
 
 const program = new Command();
 
@@ -48,6 +49,24 @@ program
       });
     },
   );
+
+// ---- wetrack diff <file.ts> ----
+program
+  .command("diff <file>")
+  .description("Lokalen Stack mit deployed Stand vergleichen")
+  .option(
+    "-u, --url <url>",
+    "API-URL",
+    process.env.WETRACK_URL ?? "https://app.wetrack.dev/api/dashboard",
+  )
+  .option("-k, --api-key <key>", "Clerk API Key (alternativ: WETRACK_API_KEY env var)")
+  .option("-v, --verbose", "Auch unveränderte Entitäten anzeigen", false)
+  .action(async (file: string, options: { url: string; apiKey?: string; verbose: boolean }) => {
+    await diffCommand(file, {
+      ...options,
+      apiKey: options.apiKey ?? process.env.WETRACK_API_KEY,
+    });
+  });
 
 // ---- wetrack validate <file.json> ----
 program
