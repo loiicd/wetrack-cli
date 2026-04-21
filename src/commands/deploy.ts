@@ -1,5 +1,8 @@
 import { resolve } from "path";
+import chalk from "chalk";
+import ora from "ora";
 import type { Stack } from "wetrack-dashboard";
+import { printError, printStackSummary, printSuccess, printWarning } from "../utils/ui";
 
 export interface DeployOptions {
   url: string;
@@ -14,13 +17,11 @@ export async function deployCommand(
 ): Promise<void> {
   const absolutePath = resolve(process.cwd(), filePath);
 
-  // Dynamischer Import – Bun verarbeitet TypeScript nativ
   let mod: { default?: Stack };
   try {
     mod = await import(`file://${absolutePath}`);
   } catch (err) {
-    console.error(`❌  Fehler beim Laden von "${filePath}":`);
-    console.error(`   ${(err as Error).message}`);
+    printError(`Fehler beim Laden von "${filePath}"`, (err as Error).message);
     process.exit(1);
   }
 
@@ -31,32 +32,37 @@ export async function deployCommand(
     typeof stack !== "object" ||
     typeof (stack as Stack).synthesize !== "function"
   ) {
-    console.error(`❌  "${filePath}" hat keinen gültigen default-Export.`);
-    console.error(`   Erwartet: export default new Stack(...)`);
+    printError(
+      `"${filePath}" hat keinen gültigen default-Export.`,
+      "Erwartet: export default new Stack(...)",
+    );
     process.exit(1);
   }
 
   const typedStack = stack as Stack;
   const payload = typedStack.synthesize();
 
-  console.log(
-    `✅  Stack "${payload.key}" (${payload.environment}) synthetisiert`,
-  );
-  console.log(`   Dashboards  : ${payload.dashboards?.length ?? 0}`);
-  console.log(`   DataSources : ${payload.dataSources?.length ?? 0}`);
-  console.log(`   Queries     : ${payload.queries?.length ?? 0}`);
-  console.log(`   Charts      : ${payload.charts?.length ?? 0}`);
+  printSuccess("Stack synthetisiert");
+  printStackSummary({
+    key: payload.key,
+    environment: payload.environment,
+    dashboards: payload.dashboards?.length ?? 0,
+    dataSources: payload.dataSources?.length ?? 0,
+    queries: payload.queries?.length ?? 0,
+    charts: payload.charts?.length ?? 0,
+  });
 
   if (options.dryRun) {
-    console.log("\n⚠️  Dry-run aktiv – kein Deployment durchgeführt.");
+    printWarning("Dry-run aktiv – kein Deployment durchgeführt.");
     if (options.verbose) {
-      console.log("\nPayload:");
-      console.log(JSON.stringify(payload, null, 2));
+      console.log("\n" + chalk.dim(JSON.stringify(payload, null, 2)));
     }
     return;
   }
 
-  console.log(`\n🚀  Deploying nach ${options.url} …`);
+  const spinner = ora(
+    `Deploying nach ${chalk.cyan(options.url)} …`,
+  ).start();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -74,23 +80,23 @@ export async function deployCommand(
   const status = response.status;
 
   if (status >= 200 && status < 300) {
-    console.log(`✅  Deployment erfolgreich (HTTP ${status})`);
+    spinner.succeed(chalk.green(`Deployment erfolgreich (HTTP ${status})`));
     if (options.verbose && body) {
-      console.log("Response:", body);
+      console.log(chalk.dim("Response: " + body));
     }
   } else {
-    console.error(`❌  Deployment fehlgeschlagen (HTTP ${status})`);
+    spinner.fail(chalk.red(`Deployment fehlgeschlagen (HTTP ${status})`));
     try {
       const json = JSON.parse(body) as { error?: string; issues?: unknown[] };
-      if (json.error) console.error(`   Fehler: ${json.error}`);
+      if (json.error) console.error(chalk.red(`   Fehler: ${json.error}`));
       if (json.issues?.length) {
         for (const issue of json.issues as { path?: unknown[]; message?: string }[]) {
           const path = issue.path?.join(".") ?? "<root>";
-          console.error(`   • ${path}: ${issue.message}`);
+          console.error(chalk.dim(`   • ${path}: ${issue.message}`));
         }
       }
     } catch {
-      if (body) console.error("Response:", body);
+      if (body) console.error(chalk.dim("Response: " + body));
     }
     process.exit(1);
   }
