@@ -1,7 +1,12 @@
 {
   "name": "wetrack-cli",
+  "version": "1.0.0",
+  "description": "CLI for deploying WeTrack dashboards from code",
   "module": "index.ts",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
