@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { synthCommand } from "./commands/synth";
 import { deployCommand } from "./commands/deploy";
 import { validateCommand } from "./commands/validate";
+import { initCommand } from "./commands/init";
 
 const program = new Command();
 
@@ -54,6 +55,14 @@ program
   .description("JSON-Datei gegen das WeTrack-Schema validieren")
   .action((file: string) => {
     validateCommand(file);
+  });
+
+// ---- wetrack init ----
+program
+  .command("init")
+  .description("Neuen WeTrack Stack initialisieren")
+  .action(async () => {
+    await initCommand();
   });
 
 program.parse(process.argv);
